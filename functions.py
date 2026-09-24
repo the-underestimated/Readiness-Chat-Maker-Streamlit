@@ -10,7 +10,8 @@ def dataReadiness(readinessFilePath, WG):
             WG1ChatMaker = WG1ChatMaker.dropna(axis=0, how='all')
             WG1ChatMaker = WG1ChatMaker.dropna(axis=1, how='all')
             WG1ChatMaker['AIRCRAFT STATUS'] = WG1ChatMaker['AIRCRAFT STATUS'].ffill()
-            WG1ChatMaker['AC REG'] = WG1ChatMaker['AC REG'].ffill()
+            WG1ChatMaker['REG'] = WG1ChatMaker['REG'].ffill()
+            WG1ChatMaker['REG'] = WG1ChatMaker['REG'].str[:6]
 
             importantColumns = ["RESTRICTION I", 'RESTRICTION II', 'RESTRICTION III', 'REDUCE CYCLE ENGINE']
 
@@ -20,13 +21,14 @@ def dataReadiness(readinessFilePath, WG):
             ]
 
             WG1ChatMaker = WG1ChatMaker.drop(columns=colsToDrop)
-            WG1ChatMaker = WG1ChatMaker[WG1ChatMaker['AC REG'].str.contains('PK', regex=True, na=False)]
+
+            WG1ChatMaker = WG1ChatMaker[WG1ChatMaker['REG'].str.contains('PK', regex=True, na=False)]
             WG1ChatMaker['WG'] = 1
 
             excludeStatus = [
-                'AIRCRAFT MAINTENANCE',
-                'AIRCRAFT AOG'
+                'D. AIRCRAFFT WITH SCHEDULE MAINT'
             ]
+
             pattern = '|'.join(excludeStatus)
             WG1ChatMaker = WG1ChatMaker[~WG1ChatMaker['AIRCRAFT STATUS'].str.contains(pattern, regex=True, na=False)]
 
@@ -47,7 +49,7 @@ def dataReadiness(readinessFilePath, WG):
             WG1WithDMI['REMAIN DAYS'] = WG1WithDMI['DUE DATE'] - pd.Timestamp.today().normalize()
             DMICountWG1 = len(WG1WithDMI)
 
-            WG1WithCDL = WG1ChatMaker[WG1ChatMaker['AIRCRAFT STATUS'] == 'C.AIRCRAFT WITH CDL']
+            WG1WithCDL = WG1ChatMaker[WG1ChatMaker['AIRCRAFT STATUS'] == 'C. AIRCRAFT WITH CDL']
             WG1WithCDL = WG1WithCDL.drop('NO', axis=1)
             WG1WithCDL = WG1WithCDL.reset_index(drop=True)
             WG1WithCDL['AIRCRAFT STATUS'] = 'AIRCRAFT WITH CDL'
@@ -65,28 +67,27 @@ def dataReadiness(readinessFilePath, WG):
             WG2ChatMaker = WG2ChatMaker.replace(r'^\s*$', pd.NA, regex=True)
             WG2ChatMaker = WG2ChatMaker.replace('#REF!', pd.NA)
             WG2ChatMaker = WG2ChatMaker.dropna(axis=0, how='all')
+            WG2ChatMaker = WG2ChatMaker.dropna(axis=1, how='all')
+            WG2ChatMaker['AIRCRAFT STATUS'] = WG2ChatMaker['AIRCRAFT STATUS'].ffill()
+            WG2ChatMaker['REG'] = WG2ChatMaker['REG'].ffill()
+            WG2ChatMaker['REG'] = WG2ChatMaker['REG'].str[:6]
 
-            importantColumnS = ["RESTRICTION I", 'RESTRICTION II', 'RESTRICTION III', 'REDUCE CYCLE ENGINE']
+            importantColumns = ["RESTRICTION I", 'RESTRICTION II', 'RESTRICTION III', 'REDUCE CYCLE ENGINE']
 
             colsToDrop = [
                 col for col in WG2ChatMaker.columns
-                if col not in importantColumnS and WG2ChatMaker[col].isna().all()
+                if col not in importantColumns and WG2ChatMaker[col].isna().all()
             ]
 
             WG2ChatMaker = WG2ChatMaker.drop(columns=colsToDrop)
-            WG2ChatMaker['AIRCRAFT STATUS'] = WG2ChatMaker['AIRCRAFT STATUS'].ffill()
-            WG2ChatMaker['REG. A/C'] = WG2ChatMaker['REG. A/C'].ffill()
-            WG2ChatMaker['RESTRICTION I'] = WG2ChatMaker['RESTRICTION I'].fillna('').astype(str) + ' ' + WG2ChatMaker['RESTRICTION II'].fillna('').astype(str) + ' ' + WG2ChatMaker['RESTRICTION III'].fillna('').astype(str) + ' ' + WG2ChatMaker['REDUCE CYCLE ENGINE'].fillna('').astype(str)
-            WG2ChatMaker = WG2ChatMaker.drop(['REDUCE CYCLE ENGINE', 'RESTRICTION II', 'RESTRICTION III'], axis=1)
 
-            WG2ChatMaker['RESTRICTION I'] = WG2ChatMaker['RESTRICTION I'].replace(r'^\s*$', pd.NA, regex=True)
-            WG2ChatMaker = WG2ChatMaker[WG2ChatMaker['REG. A/C'].str.contains('PK', regex=True, na=False)]
+            WG2ChatMaker = WG2ChatMaker[WG2ChatMaker['REG'].str.contains('PK', regex=True, na=False)]
             WG2ChatMaker['WG'] = 2
 
             excludeStatus = [
-                'AIRCRAFT MAINTENANCE',
-                'AIRCRAFT AOG'
+                'D. AIRCRAFFT WITH SCHEDULE MAINT'
             ]
+
             pattern = '|'.join(excludeStatus)
             WG2ChatMaker = WG2ChatMaker[~WG2ChatMaker['AIRCRAFT STATUS'].str.contains(pattern, regex=True, na=False)]
 
@@ -117,8 +118,7 @@ def dataReadiness(readinessFilePath, WG):
 
             WG2GoodData = pd.concat([WG2Clean, WG2WithDMI, WG2WithCDL], ignore_index=True)
             WG2GoodData['DUE DATE'] = WG2GoodData['DUE DATE'].dt.strftime('%d %b %Y')
-            WG2GoodData = WG2GoodData.rename({'DMI CAT':'DMI CATEGORY', 'REG. A/C':'AC REGISTRATION', 'DEFER': 'DEFER STATUS', 'REMAIN DAYS': 'REMAINING DAYS', 'RESTRICTION I': 'RESTRICTION', 'STA':'STATION', 'DMI NO.':'DMI NO'}, axis=1)
-            WG2GoodData = WG2GoodData.dropna(subset=['DEFER STATUS'])
+            WG2GoodData = WG2GoodData.rename({'DMI CAT':'DMI CATEGORY', 'AC REG':'AC REGISTRATION', 'DEFFER STATUS': 'DEFER STATUS', 'REMAIN DAYS':'REMAINING DAYS'}, axis=1)
             return WG2GoodData
 
         case 3:
@@ -126,8 +126,10 @@ def dataReadiness(readinessFilePath, WG):
             WG3ChatMaker = WG3ChatMaker.replace(r'^\s*$', pd.NA, regex=True)
             WG3ChatMaker = WG3ChatMaker.replace('#REF!', pd.NA)
             WG3ChatMaker = WG3ChatMaker.dropna(axis=0, how='all')
+            WG3ChatMaker = WG3ChatMaker.dropna(axis=1, how='all')
             WG3ChatMaker['AIRCRAFT STATUS'] = WG3ChatMaker['AIRCRAFT STATUS'].ffill()
-            WG3ChatMaker['REGISTRATION A/C'] = WG3ChatMaker['REGISTRATION A/C'].ffill()
+            WG3ChatMaker['REG'] = WG3ChatMaker['REG'].ffill()
+            WG3ChatMaker['REG'] = WG3ChatMaker['REG'].str[:6]
 
             importantColumns = ["RESTRICTION I", 'RESTRICTION II', 'RESTRICTION III', 'REDUCE CYCLE ENGINE']
 
@@ -135,14 +137,16 @@ def dataReadiness(readinessFilePath, WG):
                 col for col in WG3ChatMaker.columns
                 if col not in importantColumns and WG3ChatMaker[col].isna().all()
             ]
+
             WG3ChatMaker = WG3ChatMaker.drop(columns=colsToDrop)
-            WG3ChatMaker = WG3ChatMaker[WG3ChatMaker['REGISTRATION A/C'].str.contains('PK', regex=True, na=False)]
+
+            WG3ChatMaker = WG3ChatMaker[WG3ChatMaker['REG'].str.contains('PK', regex=True, na=False)]
             WG3ChatMaker['WG'] = 3
 
             excludeStatus = [
-                'AIRCRAFT MAINTENANCE',
-                'AIRCRAFT AOG'
+                'D. AIRCRAFFT WITH SCHEDULE MAINT'
             ]
+
             pattern = '|'.join(excludeStatus)
             WG3ChatMaker = WG3ChatMaker[~WG3ChatMaker['AIRCRAFT STATUS'].str.contains(pattern, regex=True, na=False)]
 
@@ -172,22 +176,19 @@ def dataReadiness(readinessFilePath, WG):
             CDLCountWG3 = len(WG3WithCDL)
 
             WG3GoodData = pd.concat([WG3Clean, WG3WithDMI, WG3WithCDL], ignore_index=True)
-
             WG3GoodData['DUE DATE'] = WG3GoodData['DUE DATE'].dt.strftime('%d %b %Y')
-            WG3GoodData = WG3GoodData.drop('REMAIN (DAYS)', axis=1)
-            WG3GoodData = WG3GoodData.rename({'DMI CAT':'DMI CATEGORY', 'REGISTRATION A/C':'AC REGISTRATION', 'DEFER': 'DEFER STATUS', 'REMAIN DAYS': 'REMAINING DAYS', 'RESTRICTION I': 'RESTRICTION'}, axis=1)
-            WG3GoodData = WG3GoodData.dropna(subset=['DEFER STATUS'])
+            WG3GoodData = WG3GoodData.rename({'DMI CAT':'DMI CATEGORY', 'AC REG':'AC REGISTRATION', 'DEFFER STATUS': 'DEFER STATUS', 'REMAIN DAYS':'REMAINING DAYS'}, axis=1)
             return WG3GoodData
 
         case 13:
-            WG13ChatMaker = pd.read_excel(readinessFilePath, sheet_name='WG 13 330 ', skiprows=8)
+            WG13ChatMaker = pd.read_excel(readinessFilePath, sheet_name='WG 13 330', skiprows=9)
             WG13ChatMaker = WG13ChatMaker.replace(r'^\s*$', pd.NA, regex=True)
             WG13ChatMaker = WG13ChatMaker.replace('#REF!', pd.NA)
             WG13ChatMaker = WG13ChatMaker.dropna(axis=0, how='all')
             WG13ChatMaker = WG13ChatMaker.dropna(axis=1, how='all')
-
             WG13ChatMaker['AIRCRAFT STATUS'] = WG13ChatMaker['AIRCRAFT STATUS'].ffill()
             WG13ChatMaker['REG'] = WG13ChatMaker['REG'].ffill()
+            WG13ChatMaker['REG'] = WG13ChatMaker['REG'].str[:6]
 
             importantColumns = ["RESTRICTION I", 'RESTRICTION II', 'RESTRICTION III', 'REDUCE CYCLE ENGINE']
 
@@ -195,22 +196,21 @@ def dataReadiness(readinessFilePath, WG):
                 col for col in WG13ChatMaker.columns
                 if col not in importantColumns and WG13ChatMaker[col].isna().all()
             ]
+
             WG13ChatMaker = WG13ChatMaker.drop(columns=colsToDrop)
             WG13ChatMaker = WG13ChatMaker[WG13ChatMaker['REG'].str.contains('PK', regex=True, na=False)]
-            WG13ChatMaker = WG13ChatMaker[~WG13ChatMaker['REG'].str.contains('PK-LDW', na=False)]
 
-            WG13ChatMaker['WG'] = 13
+            WG13Clean = WG13ChatMaker
+            WG13Clean['WG'] = 13
 
             excludeStatus = [
-                'A/C MAINTENACE',
-                'TOTAL READINESS',
-                'SERVICEABLE'
+                'D. AIRCRAFFT WITH SCHEDULE MAINT'
             ]
+
             pattern = '|'.join(excludeStatus)
             WG13ChatMaker = WG13ChatMaker[~WG13ChatMaker['AIRCRAFT STATUS'].str.contains(pattern, regex=True, na=False)]
 
-            WG13Clean = WG13ChatMaker[WG13ChatMaker['AIRCRAFT STATUS'] == 'A. CLEAN']
-
+            WG13Clean = WG13ChatMaker[WG13ChatMaker['AIRCRAFT STATUS'] == 'A. CLEAN AIRCRAFT']
             WG13Clean = WG13Clean.drop(columns='NO')
             WG13Clean = WG13Clean.reset_index(drop=True)
             WG13Clean['AIRCRAFT STATUS'] = 'CLEAN AIRCRAFT'
@@ -218,7 +218,7 @@ def dataReadiness(readinessFilePath, WG):
             WG13Clean['REMAIN DAYS'] = WG13Clean['DUE DATE'] - pd.Timestamp.today().normalize()
             cleanCountWG13 = len(WG13Clean)
 
-            WG13WithDMI = WG13ChatMaker[WG13ChatMaker['AIRCRAFT STATUS'] == 'B. WITH DMI']
+            WG13WithDMI = WG13ChatMaker[WG13ChatMaker['AIRCRAFT STATUS'] == 'B. AIRCRAFT WITH DMI']
             WG13WithDMI = WG13WithDMI.drop('NO', axis=1)
             WG13WithDMI = WG13WithDMI.reset_index(drop=True)
             WG13WithDMI['AIRCRAFT STATUS'] = 'AIRCRAFT WITH DMI'
@@ -226,7 +226,7 @@ def dataReadiness(readinessFilePath, WG):
             WG13WithDMI['REMAIN DAYS'] = WG13WithDMI['DUE DATE'] - pd.Timestamp.today().normalize()
             DMICountWG13 = len(WG13WithDMI)
 
-            WG13WithCDL = WG13ChatMaker[WG13ChatMaker['AIRCRAFT STATUS'] == 'C. AIRCRAFT WITH CDL']
+            WG13WithCDL = WG13ChatMaker[WG13ChatMaker['AIRCRAFT STATUS'] == 'C.AIRCRAFT WITH CDL']
             WG13WithCDL = WG13WithCDL.drop('NO', axis=1)
             WG13WithCDL = WG13WithCDL.reset_index(drop=True)
             WG13WithCDL['AIRCRAFT STATUS'] = 'AIRCRAFT WITH CDL'
@@ -235,8 +235,7 @@ def dataReadiness(readinessFilePath, WG):
             CDLCountWG13 = len(WG13WithCDL)
 
             WG13GoodData = pd.concat([WG13Clean, WG13WithDMI, WG13WithCDL], ignore_index=True)
-
             WG13GoodData['DUE DATE'] = WG13GoodData['DUE DATE'].dt.strftime('%d %b %Y')
-            WG13GoodData = WG13GoodData.drop('REMAIN DAYS', axis=1)
-            WG13GoodData = WG13GoodData.rename({'REG':'AC REGISTRATION', 'DEFER': 'DEFER STATUS', 'DMI CAT':'DMI CATEGORY', 'REFF MEL/CDL':'ATA CHAPTER', 'DMI NO.':'DMI NO', 'STA':'STATION'}, axis=1)
+            WG13GoodData = WG13GoodData.rename({'DMI CAT':'DMI CATEGORY', 'AC REG':'AC REGISTRATION', 'DEFFER STATUS': 'DEFER STATUS', 'REMAIN DAYS':'REMAINING DAYS'}, axis=1)
+
             return WG13GoodData

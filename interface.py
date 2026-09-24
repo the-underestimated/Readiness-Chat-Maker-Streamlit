@@ -40,22 +40,24 @@ if dataRaw is not None:
 
                 reportLines.append(sectionTitle)
 
-                # ===== CLEAN AIRCRAFT TOTAL =====
-                cleanTotal = (
-                    sectionDf[sectionDf["AIRCRAFT STATUS"] == "CLEAN AIRCRAFT"]
-                    ["AC REGISTRATION"]
-                    .nunique()
-                )
-
                 # ===== AIRCRAFT WITH DMI/CDL TOTAL =====
-                dmiCdlTotal = (
-                    sectionDf[
-                        sectionDf["AIRCRAFT STATUS"].isin(
-                            ["AIRCRAFT WITH DMI", "AIRCRAFT WITH CDL"]
-                        )
-                    ]["AC REGISTRATION"]
-                    .nunique()
-                )
+                dmiCdlRegs = sectionDf[
+                    sectionDf["AIRCRAFT STATUS"].isin(
+                        ["AIRCRAFT WITH DMI", "AIRCRAFT WITH CDL"]
+                    )
+                ]["REG"].unique()
+
+                dmiCdlTotal = len(dmiCdlRegs)
+
+                # ===== CLEAN AIRCRAFT TOTAL =====
+                cleanTotal = sectionDf[
+                    (sectionDf["AIRCRAFT STATUS"] == "CLEAN AIRCRAFT")
+                    & (~sectionDf["REG"].isin(dmiCdlRegs))
+                ]["REG"].nunique()
+
+                reportLines.append(f"CLEAN AIRCRAFT TOTAL: {cleanTotal}")
+                reportLines.append(f"AIRCRAFT WITH DMI/CDL TOTAL: {dmiCdlTotal}")
+                reportLines.append("")
 
                 reportLines.append(f"CLEAN AIRCRAFT TOTAL: {cleanTotal}")
                 reportLines.append(f"AIRCRAFT WITH DMI/CDL TOTAL: {dmiCdlTotal}")
@@ -73,7 +75,7 @@ if dataRaw is not None:
                     reportLines.append(f"*WG {wg}*")
 
                     for aircraftIndex, (reg, regDf) in enumerate(
-                        wgDf.groupby("AC REGISTRATION"), start=1
+                        wgDf.groupby("REG"), start=1
                     ):
                         reportLines.append(f"{aircraftIndex}. {reg}")
 
@@ -86,14 +88,14 @@ if dataRaw is not None:
                             )
 
                             noteParts = [
-                                f"- {row['REMARKS']} ({category})"
+                                f"- {row['DMI DESCRIPTION AND REMARK']} ({category})"
                             ]
 
                             if pd.notna(row["DUE DATE"]) and str(row["DUE DATE"]).strip():
                                 noteParts.append(f"- {row['DUE DATE']}")
 
-                            if pd.notna(row["DEFER STATUS"]) and str(row["DEFER STATUS"]).strip():
-                                noteParts.append(f"- {row['DEFER STATUS']}")
+                            if pd.notna(row["DEFER TYPE"]) and str(row["DEFER TYPE"]).strip():
+                                noteParts.append(f"- {row['DEFER TYPE']}")
 
                             reportLines.append(" ".join(noteParts))
 
