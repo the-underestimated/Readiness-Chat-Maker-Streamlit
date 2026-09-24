@@ -59,10 +59,6 @@ if dataRaw is not None:
                 reportLines.append(f"AIRCRAFT WITH DMI/CDL TOTAL: {dmiCdlTotal}")
                 reportLines.append("")
 
-                reportLines.append(f"CLEAN AIRCRAFT TOTAL: {cleanTotal}")
-                reportLines.append(f"AIRCRAFT WITH DMI/CDL TOTAL: {dmiCdlTotal}")
-                reportLines.append("")
-
                 # ===== NOTES =====
                 reportLines.append("NOTES:")
                 reportLines.append("")
