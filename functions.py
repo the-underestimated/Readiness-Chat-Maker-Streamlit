@@ -4,7 +4,7 @@ import numpy as np
 def dataReadiness(readinessFilePath, WG):
     match WG:
         case 1:
-            WG1ChatMaker = pd.read_excel(readinessFilePath, sheet_name='WG 1 JT NEW', skiprows=9)
+            WG1ChatMaker = pd.read_excel(readinessFilePath, sheet_name='WG 1 JT NEW', skiprows=8)
             WG1ChatMaker = WG1ChatMaker.replace(r'^\s*$', pd.NA, regex=True)
             WG1ChatMaker = WG1ChatMaker.replace('#REF!', pd.NA)
             WG1ChatMaker = WG1ChatMaker.dropna(axis=0, how='all')
